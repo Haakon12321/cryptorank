@@ -1,11 +1,45 @@
 import axios from "axios";
 
-const WEBHOOK = "https://discord.com/api/webhooks/1484097341102227529/UDIhySx9KMIE5IkTSJKFeFwQ_qD2g-Jyn_r9cThSDZrK-mopyPJidDTWZXJAga75Z-X3";
+const WEBHOOK = process.env.DISCORD_WEBHOOK_URL;
 
-async function send() {
-  await axios.post(WEBHOOK, {
-    content: "Bot is live 🚀"
-  });
+let sent = new Set();
+
+async function fetchRaises() {
+  // temporary fake data (we replace this next step)
+  return [
+    {
+      id: "1",
+      project: "Example Protocol",
+      amount: "$10M",
+      stage: "Seed",
+      investors: "a16z"
+    }
+  ];
 }
 
-send();
+async function sendToDiscord(r) {
+  const content =
+    `🚀 New Raise\n\n` +
+    `Project: ${r.project}\n` +
+    `Amount: ${r.amount}\n` +
+    `Stage: ${r.stage}\n` +
+    `Investors: ${r.investors}`;
+
+  await axios.post(WEBHOOK, { content });
+}
+
+async function run() {
+  console.log("Checking for new raises...");
+
+  const raises = await fetchRaises();
+
+  for (const r of raises) {
+    if (sent.has(r.id)) continue;
+
+    await sendToDiscord(r);
+    sent.add(r.id);
+  }
+}
+
+setInterval(run, 5 * 60 * 1000); // every 5 min
+run();
